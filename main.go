@@ -27,28 +27,32 @@ type QuadTree struct {
 
 
 func (q QuadTree) Insert(x int, y int) QuadTree {
-	if (x <= q.Bounds.Max.X && y <= q.Bounds.Max.Y) {
-		fmt.Println("Can Insert!")
-		fmt.Println(q.Points, q.Size, q.Capacity)
-		if (q.Size < q.Capacity) {
+	if ((x <= q.Bounds.Max.X && y <= q.Bounds.Max.Y) && (x >= q.Bounds.Min.X && y >= q.Bounds.Min.Y)) {
+		if (q.Size < q.Capacity && q.Northwest == nil) {
 			q.Points = append(q.Points, image.Point{x, y})
 			q.Size++
 		} else {
-			q.Subdivide()
+			q = q.Subdivide()
+			q.Northeast = q.Northeast.Insert(x, y)
+			q.Northwest = q.Northwest.Insert(x, y)
+			q.Southeast = q.Southeast.Insert(x, y)
+			q.Southwest = q.Southwest.Insert(x, y)
 		}
-	} else {
-		fmt.Println("Can't Insert!")
 	}
+	return q
+}
+
+func (q QuadTree) Subdivide() QuadTree {
+	q.Northwest = QuadTree{4, 0, image.Rectangle{image.Pt(0,0), image.Pt(q.Bounds.Max.X/2, q.Bounds.Max.Y/2)}, []image.Point{}, nil, nil, nil, nil}
+	q.Northeast = QuadTree{4, 0, image.Rectangle{image.Pt(q.Bounds.Max.X/2,0), image.Pt(q.Bounds.Max.X, q.Bounds.Max.Y/2)}, []image.Point{}, nil, nil, nil, nil}
+	q.Southwest = QuadTree{4, 0, image.Rectangle{image.Pt(0,q.Bounds.Max.Y/2), image.Pt(q.Bounds.Max.X/2, q.Bounds.Max.Y)}, []image.Point{}, nil, nil, nil, nil}
+	q.Southeast = QuadTree{4, 0, image.Rectangle{image.Pt(q.Bounds.Max.X/2, q.Bounds.Max.Y/2), image.Pt(q.Bounds.Max.X, q.Bounds.Max.Y)}, []image.Point{}, nil, nil, nil, nil}
 
 	return q
 }
 
-func (q QuadTree) Subdivide() {
-	fmt.Println("Subdividing!")
-}
-
 func main() {
-	imgFileName := "test.jpg"
+	imgFileName := "small.jpg"
 	reader, err := os.Open(imgFileName)
 	if err != nil {
 		log.Fatal(err)
@@ -65,11 +69,13 @@ func main() {
 	fmt.Println(width, height)
 
 	q := QuadTree{4, 0, image.Rectangle{image.Pt(0,0), image.Pt(width, height)}, []image.Point{}, nil, nil, nil, nil}
-	q = q.Insert(100, 150)
-	q = q.Insert(500, 600)
-	q = q.Insert(300, 750)
-	q = q.Insert(500, 600)
-	q = q.Insert(1, 1)
+	
+	for x_i := 0; x_i < width; x_i++ {
+		for y_i := 0; y_i < height; y_i++ {
+			q = q.Insert(x_i, y_i)
+		}
+	}
+
 
 }
 
